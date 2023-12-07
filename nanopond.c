@@ -237,25 +237,31 @@
 #define INFLOW_RATE_VARIATION 1000
 
 /* Size of pond in X and Y dimensions. */
-#define POND_SIZE_X 800
-#define POND_SIZE_Y 600
+
+ // ::NAYOUNG:: changed pond size to 6x6
+#define POND_SIZE_X 6
+#define POND_SIZE_Y 6
 
 /* Depth of pond in four-bit codons -- this is the maximum
  * genome size. This *must* be a multiple of 16! */
-#define POND_DEPTH 1024
+
+ // :NAYOUNG: 12/5 changing pond_depth to 16 bits (4 instructions)
+#define POND_DEPTH 16
 
 /* This is the divisor that determines how much energy is taken
  * from cells when they try to KILL a viable cell neighbor and
  * fail. Higher numbers mean lower penalties. */
 #define FAILED_KILL_PENALTY 3
 
+// :NAYOUNG: (12/5) commented out 255 and 258 in order to gcc this file
+
 /* Define this to use SDL. To use SDL, you must have SDL headers
  * available and you must link with the SDL library when you compile. */
 /* Comment this out to compile without SDL visualization support. */
-#define USE_SDL 1
+//#define USE_SDL 1
 
 /* Define this to use threads, and how many threads to create */
-#define USE_PTHREADS_COUNT 4
+//#define USE_PTHREADS_COUNT 4
 
 /* ----------------------------------------------------------------------- */
 
@@ -264,7 +270,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
 #ifdef USE_PTHREADS_COUNT
 #include <pthread.h>
 #endif
@@ -278,6 +283,7 @@
 #endif /* USE_SDL */
 
 volatile uint64_t prngState[2];
+ // this is randomly going through 
 static inline uintptr_t getRandom()
 {
 	// https://en.wikipedia.org/wiki/Xorshift#xorshift.2B
@@ -650,7 +656,7 @@ static void *run(void *targ)
 #ifdef USE_PTHREADS_COUNT
 			pthread_mutex_lock(&(pptr->lock));
 #endif
-
+ 
 			pptr->ID = cellIdCounter;
 			pptr->parentID = 0;
 			pptr->lineage = cellIdCounter;
@@ -675,10 +681,12 @@ static void *run(void *targ)
 		}
 
 		/* Pick a random cell to execute */
-		i = getRandom();
+        i = getRandom();
 		x = i % POND_SIZE_X;
 		y = ((i / POND_SIZE_X) >> 1) % POND_SIZE_Y;
-		pptr = &pond[x][y];
+
+// EDITING(12/7) trying to see if i can just directly choose a specific cell
+		pptr = &pond[2][3];
 
 		/* Reset the state of the VM prior to execution */
 		for(i=0;i<POND_DEPTH_SYSWORDS;++i)
@@ -707,6 +715,7 @@ static void *run(void *targ)
 		/* Core execution loop */
 		while ((pptr->energy)&&(!stop)) {
 			/* Get the next instruction */
+            
 			inst = (currentWord >> shiftPtr) & 0xf;
 
 			/* Randomly frob either the instruction or the register with a
@@ -737,7 +746,7 @@ static void *run(void *targ)
 				
 				/* Keep track of execution frequencies for each instruction */
 				statCounters.instructionExecutions[inst] += 1.0;
-				
+				// logic for each instruction
 				switch(inst) {
 					case 0x0: /* ZERO: Zero VM state registers */
 						reg = 0;
@@ -822,7 +831,7 @@ static void *run(void *targ)
 						pptr->genome[wordPtr] |= tmp << shiftPtr;
 						currentWord = pptr->genome[wordPtr];
 						break;
-					case 0xd: /* KILL: Blow away neighboring cell if allowed with penalty on failure */
+			case 0xd: /* KILL: Blow away neighboring cell if allowed with penalty on failure */
 						tmpptr = getNeighbor(x,y,facing);
 						if (accessAllowed(tmpptr,reg,0)) {
 							if (tmpptr->generation > 2)
@@ -942,9 +951,10 @@ int main(int argc,char **argv)
 	uintptr_t i,x,y;
 
 	/* Seed and init the random number generator */
-	prngState[0] = (uint64_t)time(NULL);
-	srand(time(NULL));
+    prngState[0] = (uint64_t)time(NULL);
+	srand(time(NULL)); //CHANGE RANDOM NUMBER SEED TO 13
 	prngState[1] = (uint64_t)rand();
+    
 
 	/* Reset per-report stat counters */
 	for(x=0;x<sizeof(statCounters);++x)
@@ -992,6 +1002,7 @@ int main(int argc,char **argv)
  
 	/* Clear the pond and initialize all genomes
 	 * to 0xffff... */
+
 	for(x=0;x<POND_SIZE_X;++x) {
 		for(y=0;y<POND_SIZE_Y;++y) {
 			pond[x][y].ID = 0;
@@ -1006,6 +1017,7 @@ int main(int argc,char **argv)
 #endif
 		}
 	}
+
 
 #ifdef USE_PTHREADS_COUNT
 	pthread_t threads[USE_PTHREADS_COUNT];
