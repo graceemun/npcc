@@ -246,7 +246,7 @@
  * genome size. This *must* be a multiple of 16! */
 
  // :NAYOUNG: 12/5 changing pond_depth to 16 bits (4 instructions)
-#define POND_DEPTH 16
+#define POND_DEPTH 1024
 
 /* This is the divisor that determines how much energy is taken
  * from cells when they try to KILL a viable cell neighbor and
