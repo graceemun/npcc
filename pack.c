@@ -82,51 +82,78 @@ void bin(unsigned n)
 
 /* The pond is a 2D array of cells */
 static struct Cell pond[POND_SIZE_X][POND_SIZE_Y];
-#define GENOME_SIZE 1025
+#define GENOME_SIZE 1024
+
 
 
 static struct Cell readCell(char *genomeData) {
+
     uintptr_t wordPtr = 0;
+
     uintptr_t shiftPtr = 0;
+
     uintptr_t packedValue = 0;
+
     struct Cell cell;
 
-    //printf("Size of genomeData: %zu\n", strlen(genomeData));
-    
-    for (int i = 0; genomeData[i] != '\0'; i++) {
-        char character = genomeData[i];
-        //printf("%c", character);
-        if (character == '0' || character == '1') {
-            packedValue |= (character - '0') << shiftPtr;
-            shiftPtr += 4;
+ 
 
-            if (shiftPtr >= SYSWORD_BITS) {
-                if (wordPtr >= sizeof(cell.genome) / sizeof(cell.genome[0])) {
-                    break; // Prevents memory error
-                }
+    for (int i = 0; genomeData[i] != '\0'; i++) {
+
+        char character = genomeData[i];
+
+        if (character >= '0' && character <= 'f') { // checks if the character is valid hex character
+
+            uintptr_t value = character <= '9' ? character - '0' : character - 'a' + 10; // this is a line to convert hex to decimal value.
+
+            // if the character is between 0 and 9, use character - '0' to get the decimal value.
+
+            // else if the character is not between 0 and 9, use character - 'a' + 10 to get the decimal value
+
+            packedValue |= value << shiftPtr; // shift the value to the left by shiftPtr and OR it with packedValue
+
+            shiftPtr += 4; // increment shiftPtr by 4
+
+ 
+
+            if (shiftPtr >= SYSWORD_BITS) { //if shiftPtr is greater that SYSWORD_BITS, then we have a full word and need to store it in the genome
+
                 cell.genome[wordPtr] = packedValue;
-                wordPtr++;
-                shiftPtr = 0;
-                packedValue = 0;
+
+                wordPtr++; // increment wordPtr so we know where to put it in the array
+
+                shiftPtr = 0; //reset shiftPtr to 0
+
+                packedValue = 0; //reset packedValue to 0
+
             }
+
         }
+
     }
+
+ 
 
     if (shiftPtr > 0) {
-        cell.genome[wordPtr] = packedValue;
+
+        cell.genome[wordPtr] = packedValue; // store the last word (overflow < SYSWORD_BITS)
+
     }
+
     return cell;
+
 }
 void printUnpackedCell(struct Cell cell) {
-    uintptr_t wordPtr = 0;
-    uintptr_t shiftPtr = 0;
+    uintptr_t wordPtr = 0; //pointing to the uintptr_t (that's filled with instructions)
+    uintptr_t shiftPtr = 0; //instruction pointer (index to the instruction)
     uintptr_t packedValue;
 
     while (wordPtr < sizeof(cell.genome) / sizeof(cell.genome[0])) {
         packedValue = cell.genome[wordPtr];
+        //this is going through every 16 bits at a time
         while (shiftPtr < SYSWORD_BITS) {
-            char character = (packedValue >> shiftPtr) & 0xF;
-            printf("%c", character + '0');
+            char character = (packedValue >> shiftPtr) & 0xf;
+            printf("%c", character + '0' );
             shiftPtr += 4;
         }
         wordPtr++;
@@ -139,7 +166,7 @@ static void writeCell(FILE *file, struct Cell *cell) {
 		wordPtr = 0;
 		shiftPtr = 0;
 		stopCount = 0;
-		for(i=0;i<POND_DEPTH;++i) {
+		for(i=0;i<POND_DEPTH;i++) {
 			inst = (cell->genome[wordPtr] >> shiftPtr) & 0xf;
 			/* Four STOP instructions in a row is considered the end.
 			 * The probability of this being wrong is *very* small, and
@@ -162,6 +189,7 @@ static void writeCell(FILE *file, struct Cell *cell) {
 		}
 	fprintf(file,"\n");
 }
+
 int main(int argc, char** argv) {
     FILE *file = fopen("file.txt", "r");
     if (file == NULL) {
