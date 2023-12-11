@@ -651,6 +651,7 @@ static void *run(void *targ)
 		if (!(clock % INFLOW_FREQUENCY)) {
 			x = getRandom() % POND_SIZE_X;
 			y = getRandom() % POND_SIZE_Y;
+            
 			pptr = &pond[x][y];
 
 #ifdef USE_PTHREADS_COUNT
@@ -685,8 +686,7 @@ static void *run(void *targ)
 		x = i % POND_SIZE_X;
 		y = ((i / POND_SIZE_X) >> 1) % POND_SIZE_Y;
 
-// EDITING(12/7) trying to see if i can just directly choose a specific cell
-		pptr = &pond[2][3];
+		pptr = &pond[x][y];
 
 		/* Reset the state of the VM prior to execution */
 		for(i=0;i<POND_DEPTH_SYSWORDS;++i)
