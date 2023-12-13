@@ -1,3 +1,4 @@
+
 /* *********************************************************************** */
 /*                                                                         */
 /* Nanopond version 2.0 -- A teeny tiny artificial life virtual machine    */
@@ -190,8 +191,7 @@
  * will need a compiler. MinGW and Borland's BCC32 are both free. I
  * would actually expect those to work better than Microsoft's compilers,
  * since MS tends to ignore C/C++ standards. If stdint.h isn't around,
- * you can fudge it like this:
- *
+ * you can fudge it like this:*
  * #define uintptr_t unsigned long (or whatever your machine size word is)
  * #define uint8_t unsigned char
  * #define uint16_t unsigned short
