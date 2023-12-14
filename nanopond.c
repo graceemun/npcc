@@ -51,8 +51,8 @@
 #define FAILED_KILL_PENALTY 3
 
 /* Defining new variables for screen size */
-#define WINDOW_SIZE_X 800
-#define WINDOW_SIZE_Y 600
+#define WINDOW_SIZE_X 250
+#define WINDOW_SIZE_Y 250
 
 /* Define this to use SDL. To use SDL, you must have SDL headers
  * available and you must link with the SDL library when you compile. */
@@ -168,6 +168,8 @@ static const char *colorSchemeName[2] = { "KINSHIP", "LINEAGE" };
 static SDL_Window *window;
 static SDL_Surface *winsurf;
 static SDL_Surface *screen;
+static SDL_Renderer *renderer;
+static SDL_Texture *texture; 
 #endif
 
 //---------------------------------------------------------------------------------
@@ -493,20 +495,21 @@ static void *run(void *targ)
                 }
                  
             }
+
+    	    // --BLITTING: rendering non-changing graphic elements into a background image once
+		// (for every draw, only elements that change are drawn onto background)
             SDL_BlitSurface(screen, NULL, winsurf, NULL);
             SDL_UpdateWindowSurface(window);
 #endif /* USE_SDL */
         }
-        
-        
-//REFERS TO ENERGYYYYY
+
 
         /* Introduce a random cell somewhere with a given energy level */
         /* This is called seeding, and introduces both energy and
          * entropy into the substrate. This happens every INFLOW_FREQUENCY
          * clock ticks. */
         if (!(clock % INFLOW_FREQUENCY)) {
-            x = getRandom() % POND_SIZE_X; //FIX HERE HELP ME
+            x = getRandom() % POND_SIZE_X;
             y = getRandom() % POND_SIZE_Y;
             pptr = &pond[x][y];
 
@@ -801,7 +804,7 @@ static void *run(void *targ)
  */
 int main(int argc, char** argv) {
     uintptr_t i,x,y;
-    
+    Uint32 rflags = SDL_RENDERER_SOFTWARE;
     /* Reset per-report stat counters */
     for(x=0;x<sizeof(statCounters);++x) 
     	((uint8_t *)&statCounters)[x] = (uint8_t)0;
@@ -814,6 +817,9 @@ int main(int argc, char** argv) {
             }
             atexit(SDL_Quit);
             window = SDL_CreateWindow("nanopond", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_SIZE_X,WINDOW_SIZE_Y,0);
+	    renderer = SDL_CreateRenderer( window, -1, rflags);
+	    texture = SDL_CreateTextureFromSurface(renderer, screen);
+
 	if (!window) {
                 fprintf(stderr, "*** Unable to create SDL window: %s ***\n", SDL_GetError());
                 exit(1);
@@ -865,7 +871,7 @@ int main(int argc, char** argv) {
  --------------------*/
 FILE *file = fopen("genome.txt", "r");
     if (file == NULL) {
-        printf("Failed to open the file.\n");
+        printf("Failed to open the genome file.\n");
         return 1;
     }
 
@@ -873,7 +879,7 @@ FILE *file = fopen("genome.txt", "r");
         for (int j = 0; j < POND_SIZE_Y; j++) {
             char line[GENOME_SIZE];
             if (fgets(line, sizeof(line), file) == NULL) {
-                printf("Failed to read the file.\n");
+                printf("Failed to read the genome file.\n");
                 return 1;
             }
             //printf("%s\n\n", line);
@@ -882,7 +888,7 @@ FILE *file = fopen("genome.txt", "r");
 
             FILE *file1 = fopen("file1.txt", "a");
             if (file1 == NULL) {
-                printf("Failed to create the file.\n");
+                printf("Failed to create the file1.txt file.\n");
                 return 1;
             }
             //printUnpackedCell(pond[0][0]);
@@ -892,7 +898,7 @@ FILE *file = fopen("genome.txt", "r");
           }
         }
 
-printUnpackedCell(pond[4][6]);
+//printUnpackedCell(pond[4][6]);
 #ifdef USE_PTHREADS_COUNT
             pthread_t threads[USE_PTHREADS_COUNT];
             for(i=1;i<USE_PTHREADS_COUNT;++i)
@@ -914,5 +920,6 @@ printUnpackedCell(pond[4][6]);
         }
     }
 }
+
 
 
